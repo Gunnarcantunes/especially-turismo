@@ -1,10 +1,21 @@
+databases:
+  - name: especially-turismo-db
+    plan: free
+    databaseName: especially_turismo
+    user: especially_turismo
+
 services:
   - type: web
     name: especially-turismo-backend
     env: python
+    plan: starter
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: GROQ_API_KEY
         sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: especially-turismo-db
+          property: connectionString
