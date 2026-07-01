@@ -1,0 +1,29 @@
+# Segredos e ambiente
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Banco de dados e estado local
+backend/*.db
+backend/alerts.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

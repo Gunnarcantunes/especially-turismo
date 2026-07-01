@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Especially Turismo — Painel Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0D0D1A;
+      --bg-surface:  #13132A;
+      --bg-card:     #1A1A35;
+      --bg-card2:    #1E1E3F;
+      --purple:      #6B4CE0;
+      --purple-light:#8B6CF0;
+      --cyan:        #00D4FF;
+      --cyan-dim:    #00A3C4;
+      --text:        #E8E8F0;
+      --text-muted:  #7A7A9A;
+      --border:      #2A2A4A;
+      --green:       #2ECC71;
+      --yellow:      #F1C40F;
+      --red:         #E74C3C;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+    }
+
+    /* ── Alert bar ── */
+    .alert-bar {
+      display: none;
+      background: var(--red);
+      color: #fff;
+      text-align: center;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .alert-bar.visible { display: block; }
+
+    /* ── Header ── */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 1px;
+    }
+
+    .logo-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .agent-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .status-dot.offline { background: var(--red); animation: none; }
+
+    .status-dot.online {
+      animation: pulse-g 2s infinite;
+    }
+
+    @keyframes pulse-g {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(46,204,113,0.5); }
+      50%       { box-shadow: 0 0 0 5px rgba(46,204,113,0); }
+    }
+
+    .status-label { font-weight: 600; }
+    .status-label.online  { color: var(--green); }
+    .status-label.offline { color: var(--red); }
+
+    .refresh-info {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.8; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--purple), var(--cyan-dim));
+      color: #fff;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* ── Seção de título ── */
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── Métricas ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: border-color 0.2s;
+    }
+
+    .metric-card:hover { border-color: var(--purple); }
+
+    .metric-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--purple-light), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .metric-card.highlight { border-color: var(--cyan); }
+
+    /* ── Grid inferior ── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 860px) {
+      .bottom-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Card genérico ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-weight: 700;
+    }
+
+    .badge-cyan {
+      background: rgba(0,212,255,0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(0,212,255,0.3);
+    }
+
+    /* ── Gráfico ── */
+    .chart-wrap {
+      position: relative;
+      height: 180px;
+    }
+
+    /* ── Tabela de leads ── */
+    .leads-section { margin-top: 28px; }
+
+    .leads-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: var(--bg-card2);
+      position: sticky;
+      top: 0;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tbody tr { background: var(--bg-card); transition: background 0.15s; }
+    tbody tr:hover { background: var(--bg-card2); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-green  { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid var(--green); }
+    .badge-yellow { background: rgba(241,196,15,0.15);  color: var(--yellow); border: 1px solid var(--yellow); }
+    .badge-gray   { background: rgba(122,122,154,0.15); color: var(--text-muted); border: 1px solid var(--border); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+
+    /* ── Alertas recentes ── */
+    .alert-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .alert-item:last-child { border-bottom: none; }
+
+    .alert-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .alert-msg { color: var(--text); line-height: 1.4; }
+    .alert-time { color: var(--text-muted); font-size: 10px; margin-top: 2px; }
+
+    .no-alerts {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Alert bar offline -->
+<div class="alert-bar" id="offlineBar">
+  ⚠ AGENTE SOFIA OFFLINE — Sistema de atendimento indisponível. Verifique o servidor backend.
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-badge">ET</div>
+    <div>
+      <div class="logo-title">Especially Turismo</div>
+      <div class="logo-sub">Painel de Monitoramento</div>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="agent-status">
+      <div class="status-dot online" id="statusDot"></div>
+      <span class="status-label online" id="statusLabel">Sofia Online</span>
+    </div>
+    <div class="refresh-info" id="lastRefresh">—</div>
+    <button class="btn btn-outline" onclick="carregarDados()">↺ Atualizar</button>
+    <button class="btn btn-primary" onclick="exportarCSV()">⬇ Exportar CSV</button>
+  </div>
+</header>
+
+<!-- Container -->
+<div class="container">
+
+  <!-- Métricas -->
+  <div class="section-title">Métricas em Tempo Real</div>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Conversas Hoje</div>
+      <div class="metric-value" id="metConversasHoje">—</div>
+      <div class="metric-sub">sessões únicas</div>
+    </div>
+    <div class="metric-card highlight">
+      <div class="metric-label">Leads Qualificados</div>
+      <div class="metric-value" id="metQualificados">—</div>
+      <div class="metric-sub">acima de R$ 3.000</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Em Nutrição</div>
+      <div class="metric-value" id="metNurturing">—</div>
+      <div class="metric-sub">abaixo do critério</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Taxa de Conversão</div>
+      <div class="metric-value" id="metTaxa">—</div>
+      <div class="metric-sub">% leads qualificados</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Tempo Médio de Resposta</div>
+      <div class="metric-value" id="metTempo">—</div>
+      <div class="metric-sub">milissegundos</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Alertas Não Lidos</div>
+      <div class="metric-value" id="metAlertas">—</div>
+      <div class="metric-sub">aguardando revisão</div>
+    </div>
+  </div>
+
+  <!-- Gráfico + Alertas -->
+  <div class="bottom-grid">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Alertas Recentes</div>
+        <div class="card-badge badge-cyan" id="alertCount">0</div>
+      </div>
+      <div id="alertsList"><div class="no-alerts">Nenhum alerta</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Conversas por Dia — Últimos 7 dias</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chartConversas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de Leads -->
+  <div class="leads-section">
+    <div class="leads-header">
+      <div class="section-title" style="margin-bottom:0">Leads Qualificados</div>
+      <div style="font-size:11px;color:var(--text-muted)" id="leadsCount">0 registros</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Destino</th>
+            <th>Datas</th>
+            <th>Pessoas</th>
+            <th>Orçamento</th>
+            <th>Status</th>
+            <th>Registrado em</th>
+          </tr>
+        </thead>
+        <tbody id="leadsBody">
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <div class="icon">✈</div>
+                Carregando leads...
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:8000'
+    : 'https://especially-turismo-backend.onrender.com';
+  let chart = null;
+
+  // ── Carregar dados ──────────────────────────────────────────
+  async function carregarDados() {
+    await Promise.all([carregarStats(), carregarLeads(), carregarAlertas()]);
+    atualizarTimestamp();
+  }
+
+  async function carregarStats() {
+    try {
+      const res = await fetch(`${API}/stats`);
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+
+      document.getElementById('metConversasHoje').textContent = d.conversas_hoje ?? 0;
+      document.getElementById('metQualificados').textContent  = d.leads_qualificados_total ?? 0;
+      document.getElementById('metNurturing').textContent     = d.leads_nurturing_total ?? 0;
+      document.getElementById('metTaxa').textContent          = (d.taxa_conversao ?? 0) + '%';
+      document.getElementById('metTempo').textContent         = Math.round(d.tempo_medio_resposta_ms ?? 0);
+      document.getElementById('metAlertas').textContent       = d.alertas_nao_lidos ?? 0;
+
+      setOnline(true);
+      renderChart(d.conversas_por_dia || []);
+    } catch {
+      setOnline(false);
+    }
+  }
+
+  async function carregarLeads() {
+    try {
+      const res = await fetch(`${API}/leads?status=QUALIFICADO`);
+      const leads = await res.json();
+      renderLeads(leads);
+    } catch {
+      document.getElementById('leadsBody').innerHTML =
+        `<tr><td colspan="8"><div class="empty-state"><div class="icon">⚠</div>Erro ao carregar leads</div></td></tr>`;
+    }
+  }
+
+  async function carregarAlertas() {
+    try {
+      const res = await fetch(`${API}/alertas`);
+      const alertas = await res.json();
+      renderAlertas(alertas);
+    } catch {
+      // silencioso
+    }
+  }
+
+  // ── Render: leads ───────────────────────────────────────────
+  function renderLeads(leads) {
+    const tbody = document.getElementById('leadsBody');
+    document.getElementById('leadsCount').textContent = `${leads.length} registro${leads.length !== 1 ? 's' : ''}`;
+
+    if (!leads.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">✈</div>Nenhum lead qualificado ainda</div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = leads.map((l, i) => `
+      <tr>
+        <td style="color:var(--text-muted)">${i + 1}</td>
+        <td><strong>${esc(l.nome || 'Não informado')}</strong></td>
+        <td>✈ ${esc(l.destino || '—')}</td>
+        <td>${esc(l.datas || '—')}</td>
+        <td>${l.num_pessoas ?? '—'}</td>
+        <td><strong style="color:var(--cyan)">${fmtBRL(l.orcamento)}</strong></td>
+        <td>${badgeStatus(l.status)}</td>
+        <td style="color:var(--text-muted)">${fmtDate(l.criado_em)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Render: alertas ─────────────────────────────────────────
+  function renderAlertas(alertas) {
+    const el = document.getElementById('alertsList');
+    document.getElementById('alertCount').textContent = alertas.length;
+
+    if (!alertas.length) {
+      el.innerHTML = `<div class="no-alerts">Nenhum alerta pendente ✓</div>`;
+      return;
+    }
+
+    const icones = {
+      LEAD_QUALIFICADO: '🌟',
+      HEALTH_CHECK_FALHOU: '🔴',
+      INATIVIDADE: '⏱',
+    };
+
+    el.innerHTML = alertas.slice(0, 8).map(a => `
+      <div class="alert-item">
+        <div class="alert-icon">${icones[a.tipo] || '⚠'}</div>
+        <div>
+          <div class="alert-msg">${esc(a.mensagem)}</div>
+          <div class="alert-time">${fmtDate(a.criado_em)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Render: gráfico ─────────────────────────────────────────
+  function renderChart(dados) {
+    // Garante 7 dias mesmo sem dados
+    const dias = [];
+    const hoje = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(hoje);
+      d.setDate(d.getDate() - i);
+      dias.push(d.toISOString().slice(0, 10));
+    }
+
+    const map = {};
+    dados.forEach(d => { map[d.dia] = d.total; });
+    const valores = dias.map(d => map[d] || 0);
+    const labels  = dias.map(d => {
+      const [, m, day] = d.split('-');
+      return `${day}/${m}`;
+    });
+
+    const ctx = document.getElementById('chartConversas').getContext('2d');
+
+    if (chart) { chart.destroy(); }
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Conversas',
+          data: valores,
+          backgroundColor: 'rgba(107,76,224,0.5)',
+          borderColor: '#6B4CE0',
+          borderWidth: 2,
+          borderRadius: 6,
+          hoverBackgroundColor: 'rgba(0,212,255,0.4)',
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1A1A35',
+            titleColor: '#E8E8F0',
+            bodyColor: '#7A7A9A',
+            borderColor: '#2A2A4A',
+            borderWidth: 1,
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(42,42,74,0.6)' },
+            ticks: { color: '#7A7A9A', font: { size: 11 } },
+          },
+          y: {
+            grid: { color: 'rgba(42,42,74,0.6)' },
+            ticks: { color: '#7A7A9A', font: { size: 11 }, stepSize: 1 },
+            beginAtZero: true,
+          },
+        },
+      },
+    });
+  }
+
+  // ── Status online/offline ───────────────────────────────────
+  function setOnline(online) {
+    const dot   = document.getElementById('statusDot');
+    const label = document.getElementById('statusLabel');
+    const bar   = document.getElementById('offlineBar');
+
+    dot.className   = `status-dot ${online ? 'online' : 'offline'}`;
+    label.className = `status-label ${online ? 'online' : 'offline'}`;
+    label.textContent = online ? 'Sofia Online' : 'Sofia Offline';
+    bar.classList.toggle('visible', !online);
+  }
+
+  // ── Exportar CSV ────────────────────────────────────────────
+  function exportarCSV() {
+    window.open(`${API}/leads/exportar/csv`, '_blank');
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function fmtBRL(v) {
+    if (v == null) return '—';
+    return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    try {
+      return new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+    } catch { return iso; }
+  }
+
+  function badgeStatus(s) {
+    const map = {
+      QUALIFICADO:  ['badge-green',  'Qualificado'],
+      NURTURING:    ['badge-yellow', 'Nutrição'],
+      EM_ANDAMENTO: ['badge-gray',   'Em andamento'],
+    };
+    const [cls, txt] = map[s] || ['badge-gray', s];
+    return `<span class="badge ${cls}">${txt}</span>`;
+  }
+
+  function atualizarTimestamp() {
+    const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    document.getElementById('lastRefresh').textContent = `Atualizado às ${agora}`;
+  }
+
+  // ── Auto-refresh 30s ────────────────────────────────────────
+  carregarDados();
+  setInterval(carregarDados, 30000);
+</script>
+</body>
+</html>

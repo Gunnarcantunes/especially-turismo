@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Especially Turismo — Atendimento</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0D0D1A;
+      --bg-surface: #13132A;
+      --bg-card:    #1A1A35;
+      --purple:     #6B4CE0;
+      --purple-light: #8B6CF0;
+      --cyan:       #00D4FF;
+      --cyan-dim:   #00A3C4;
+      --text:       #E8E8F0;
+      --text-muted: #7A7A9A;
+      --border:     #2A2A4A;
+      --bubble-user: #6B4CE0;
+      --bubble-sofia: #1E1E3F;
+      --online:     #2ECC71;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+    }
+
+    /* ── Layout ── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+    }
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--purple-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px var(--cyan);
+    }
+
+    .header-info { flex: 1; }
+
+    .header-nome {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .dot-online {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--online);
+      animation: pulse-green 2s infinite;
+    }
+
+    @keyframes pulse-green {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    .logo-text {
+      font-size: 11px;
+      color: var(--cyan);
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ── Mensagens ── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      scroll-behavior: smooth;
+    }
+
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .msg-wrapper {
+      display: flex;
+      flex-direction: column;
+      max-width: 82%;
+    }
+
+    .msg-wrapper.sofia { align-self: flex-start; }
+    .msg-wrapper.user  { align-self: flex-end; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.55;
+      word-break: break-word;
+      position: relative;
+    }
+
+    .bubble.sofia {
+      background: var(--bubble-sofia);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .bubble.user {
+      background: var(--bubble-user);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      padding: 0 4px;
+    }
+
+    .msg-wrapper.user .msg-time { text-align: right; }
+
+    /* ── Badge de status lead ── */
+    .lead-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+      align-self: flex-start;
+    }
+
+    .lead-badge.QUALIFICADO { background: rgba(46,204,113,0.15); color: #2ECC71; border: 1px solid #2ECC71; }
+    .lead-badge.NURTURING   { background: rgba(241,196,15,0.15);  color: #F1C40F; border: 1px solid #F1C40F; }
+
+    /* ── Typing indicator ── */
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      background: var(--bubble-sofia);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      padding: 12px 16px;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .typing-indicator.visible { display: flex; }
+
+    .typing-indicator span {
+      width: 7px;
+      height: 7px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30%            { transform: translateY(-6px); }
+    }
+
+    /* ── Divisor de data ── */
+    .date-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 11px;
+      margin: 8px 0;
+    }
+
+    .date-divider::before, .date-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Input ── */
+    .input-area {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+    }
+
+    .input-wrap {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrap:focus-within { border-color: var(--purple); }
+
+    textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+      resize: none;
+      max-height: 100px;
+      line-height: 1.5;
+      font-family: inherit;
+    }
+
+    textarea::placeholder { color: var(--text-muted); }
+
+    .btn-send {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--cyan-dim));
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .btn-send:hover  { opacity: 0.88; }
+    .btn-send:active { transform: scale(0.93); }
+
+    .btn-send svg { fill: #fff; }
+
+    /* ── Alerta de erro ── */
+    .alert-bar {
+      display: none;
+      background: #C0392B;
+      color: #fff;
+      font-size: 12px;
+      text-align: center;
+      padding: 6px 12px;
+      font-weight: 600;
+    }
+
+    .alert-bar.visible { display: block; }
+
+    /* ── Scroll para baixo ── */
+    .scroll-btn {
+      position: absolute;
+      bottom: 76px;
+      right: 20px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--purple);
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      font-size: 16px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    .scroll-btn.visible { display: flex; }
+
+    @media (min-width: 600px) {
+      .app {
+        border-radius: 16px;
+        margin: 20px auto;
+        height: calc(100vh - 40px);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="avatar">ET</div>
+    <div class="header-info">
+      <div class="header-nome">Sofia</div>
+      <div class="header-status">
+        <div class="dot-online"></div>
+        <span>online agora</span>
+      </div>
+    </div>
+    <div class="logo-text">Especially Turismo</div>
+  </div>
+
+  <!-- Alerta offline -->
+  <div class="alert-bar" id="alertBar">
+    ⚠ Serviço temporariamente indisponível. Tente novamente em instantes.
+  </div>
+
+  <!-- Mensagens -->
+  <div class="messages" id="messages">
+    <div class="date-divider">Hoje</div>
+    <div class="typing-indicator" id="typingIndicator">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
+  <!-- Botão scroll -->
+  <button class="scroll-btn" id="scrollBtn" onclick="scrollToBottom()">↓</button>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea
+        id="msgInput"
+        placeholder="Escreva sua mensagem..."
+        rows="1"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+    </div>
+    <button class="btn-send" onclick="sendMessage()">
+      <svg width="18" height="18" viewBox="0 0 24 24">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:8000'
+    : 'https://especially-turismo-backend.onrender.com';
+  let sessionId = null;
+  let sending = false;
+
+  const messagesEl  = document.getElementById('messages');
+  const inputEl     = document.getElementById('msgInput');
+  const typingEl    = document.getElementById('typingIndicator');
+  const alertBar    = document.getElementById('alertBar');
+  const scrollBtn   = document.getElementById('scrollBtn');
+
+  // ── Inicialização ──────────────────────────────────────────
+  async function init() {
+    sessionId = localStorage.getItem('et_session_id');
+    const savedMessages = JSON.parse(localStorage.getItem('et_messages') || '[]');
+
+    if (sessionId && savedMessages.length > 0) {
+      savedMessages.forEach(m => addBubble(m.papel, m.conteudo, m.time, m.status, false));
+      scrollToBottom();
+      return;
+    }
+
+    // Sessão nova — busca saudação da Sofia
+    showTyping();
+    try {
+      const res = await fetch(`${API_BASE}/iniciar`);
+      const data = await res.json();
+      sessionId = data.session_id;
+      localStorage.setItem('et_session_id', sessionId);
+      hideTyping();
+      addBubble('sofia', data.resposta);
+    } catch {
+      hideTyping();
+      showAlert();
+    }
+  }
+
+  // ── Enviar mensagem ────────────────────────────────────────
+  async function sendMessage() {
+    const texto = inputEl.value.trim();
+    if (!texto || sending) return;
+    sending = true;
+
+    addBubble('user', texto);
+    inputEl.value = '';
+    autoResize(inputEl);
+    showTyping();
+
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, mensagem: texto }),
+      });
+
+      if (!res.ok) throw new Error('Erro na resposta');
+      const data = await res.json();
+      hideTyping();
+      addBubble('sofia', data.resposta, null, data.lead_status);
+      hideAlert();
+    } catch {
+      hideTyping();
+      showAlert();
+    } finally {
+      sending = false;
+    }
+  }
+
+  // ── Adicionar bolha ────────────────────────────────────────
+  function addBubble(papel, texto, time, status, save = true) {
+    const agora = time || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    const wrapper = document.createElement('div');
+    wrapper.className = `msg-wrapper ${papel}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${papel}`;
+    bubble.textContent = texto;
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'msg-time';
+    timeEl.textContent = agora;
+
+    wrapper.appendChild(bubble);
+    wrapper.appendChild(timeEl);
+
+    if (status && (status === 'QUALIFICADO' || status === 'NURTURING')) {
+      const badge = document.createElement('div');
+      badge.className = `lead-badge ${status}`;
+      badge.textContent = status === 'QUALIFICADO' ? '✓ Lead Qualificado' : '◎ Em Nutrição';
+      wrapper.appendChild(badge);
+    }
+
+    // Insere antes do typing indicator
+    messagesEl.insertBefore(wrapper, typingEl);
+    scrollToBottom();
+
+    if (save) persistMessage(papel, texto, agora, status);
+  }
+
+  // ── Persist local ──────────────────────────────────────────
+  function persistMessage(papel, conteudo, time, status) {
+    const msgs = JSON.parse(localStorage.getItem('et_messages') || '[]');
+    msgs.push({ papel, conteudo, time, status });
+    if (msgs.length > 200) msgs.splice(0, msgs.length - 200);
+    localStorage.setItem('et_messages', JSON.stringify(msgs));
+  }
+
+  // ── Typing indicator ───────────────────────────────────────
+  function showTyping() {
+    typingEl.classList.add('visible');
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    typingEl.classList.remove('visible');
+  }
+
+  // ── Scroll ─────────────────────────────────────────────────
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  messagesEl.addEventListener('scroll', () => {
+    const atBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100;
+    scrollBtn.classList.toggle('visible', !atBottom);
+  });
+
+  // ── Alert bar ──────────────────────────────────────────────
+  function showAlert() { alertBar.classList.add('visible'); }
+  function hideAlert() { alertBar.classList.remove('visible'); }
+
+  // ── Input helpers ──────────────────────────────────────────
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+  }
+
+  init();
+</script>
+</body>
+</html>
