@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from groq import Groq
 from config import (
@@ -8,7 +9,8 @@ from config import (
     GROQ_MODEL,
 )
 
-client = Groq()
+api_key = os.environ.get("GROQ_API_KEY", "").strip()
+client = Groq(api_key=api_key)
 
 SYSTEM_PROMPT = f"""Você é {AGENTE_NOME}, consultora de viagens de luxo da {AGENCIA_NOME}.
 
