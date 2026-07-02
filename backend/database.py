@@ -1,7 +1,10 @@
+import logging
 import os
 from datetime import datetime
 from contextlib import contextmanager
 from config import DATABASE_PATH
+
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 IS_POSTGRES = bool(DATABASE_URL)
@@ -103,11 +106,18 @@ def get_conn():
 
 
 def init_db():
-    with get_conn() as cur:
-        if IS_POSTGRES:
-            cur.execute(SCHEMA_POSTGRES)
-        else:
-            cur.executescript(SCHEMA_SQLITE)
+    backend = "postgres" if IS_POSTGRES else "sqlite"
+    logger.info(f"Inicializando banco de dados (backend={backend})")
+    try:
+        with get_conn() as cur:
+            if IS_POSTGRES:
+                cur.execute(SCHEMA_POSTGRES)
+            else:
+                cur.executescript(SCHEMA_SQLITE)
+    except Exception:
+        logger.exception(f"Falha ao criar tabelas (backend={backend})")
+        raise
+    logger.info(f"Banco de dados pronto (backend={backend})")
 
 
 def salvar_mensagem(session_id: str, papel: str, conteudo: str):
